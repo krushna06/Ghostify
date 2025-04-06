@@ -11,7 +11,7 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-OLLAMA_API_URL = "http://localhost:3001/api/generate"
+OLLAMA_API_URL = "https://11434-krushna06-nullrepo-ke9esi8zzg8.ws-us118.gitpod.io/api/generate"
 
 @app.route('/process-image', methods=['POST'])
 def process_image():
@@ -41,7 +41,7 @@ def process_image():
 def send_to_ollama(text):
     try:
         payload = {
-            "model": "deepseek-r1:1.5b",
+            "model": "deepseek-coder-v2:16b",
             "prompt": text,
             "stream": False
         }
