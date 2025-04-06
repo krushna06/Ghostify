@@ -10,14 +10,12 @@ let mainWindow;
 let chatHistory = [];
 let config;
 
-// Load config
 function loadConfig() {
     try {
         const configPath = path.join(__dirname, '..', 'config.ini');
         const configFile = readFileSync(configPath, 'utf-8');
         const parsedConfig = ini.parse(configFile);
         
-        // Parse the available_models JSON string if it exists
         if (parsedConfig.model && parsedConfig.model.available_models) {
             try {
                 parsedConfig.model.available_models = JSON.parse(parsedConfig.model.available_models);
@@ -66,13 +64,11 @@ function getDefaultModels() {
     };
 }
 
-// Save config
 function saveConfig() {
     try {
         const configPath = path.join(__dirname, '..', 'config.ini');
         const configToSave = { ...config };
         
-        // Convert available_models to string before saving
         if (configToSave.model && configToSave.model.available_models) {
             configToSave.model.available_models = JSON.stringify(configToSave.model.available_models);
         }
@@ -104,11 +100,8 @@ function createWindow() {
     });
 
     mainWindow.loadFile('index.html');
-    
-    // Center the window
     mainWindow.center();
     
-    // Set window position to top-right corner
     const windowBounds = mainWindow.getBounds();
     mainWindow.setPosition(width - windowBounds.width - 20, 20);
 }
@@ -116,12 +109,9 @@ function createWindow() {
 app.whenReady().then(() => {
     createWindow();
 
-    // Register keyboard shortcuts from config
     function registerShortcuts() {
-        // Unregister existing shortcuts
         globalShortcut.unregisterAll();
 
-        // Register new shortcuts
         globalShortcut.register(config.keybinds.toggle_window, () => {
             if (mainWindow.isVisible()) {
                 mainWindow.hide();
