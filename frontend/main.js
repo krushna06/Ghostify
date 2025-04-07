@@ -1,5 +1,5 @@
 const { app, BrowserWindow, globalShortcut, ipcMain, screen } = require('electron');
-const { writeFile, createReadStream, readFileSync, writeFileSync } = require('fs');
+const { writeFile, createReadStream, readFileSync, writeFileSync, existsSync } = require('fs');
 const path = require('path');
 const screenshot = require('screenshot-desktop');
 const axios = require('axios');
@@ -83,6 +83,32 @@ function saveConfig() {
     } catch (error) {}
 }
 
+function getChatHistoryPath() {
+    return path.join(app.getPath('userData'), 'chat_history.json');
+}
+
+function loadChatHistory() {
+    try {
+        const historyPath = getChatHistoryPath();
+        if (existsSync(historyPath)) {
+            const data = readFileSync(historyPath, 'utf-8');
+            chatHistory = JSON.parse(data);
+        }
+    } catch (error) {
+        console.error('Error loading chat history:', error);
+        chatHistory = [];
+    }
+}
+
+function saveChatHistory() {
+    try {
+        const historyPath = getChatHistoryPath();
+        writeFileSync(historyPath, JSON.stringify(chatHistory, null, 2));
+    } catch (error) {
+        console.error('Error saving chat history:', error);
+    }
+}
+
 function createWindow() {
     config = loadConfig();
     const { width, height } = screen.getPrimaryDisplay().workAreaSize;
@@ -111,6 +137,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+    loadChatHistory();
     createWindow();
 
     function registerShortcuts() {
@@ -199,14 +226,18 @@ app.whenReady().then(() => {
                     timestamp: new Date().toISOString()
                 };
                 chatHistory.push(chatItem);
+                saveChatHistory();
                 mainWindow.webContents.send('update-chat', chatItem);
             })
             .catch(error => {
-                mainWindow.webContents.send('update-chat', { 
+                const errorItem = { 
                     user: 'Error processing image', 
                     ollama: 'Failed to process the screenshot. Please try again.',
                     timestamp: new Date().toISOString()
-                });
+                };
+                chatHistory.push(errorItem);
+                saveChatHistory();
+                mainWindow.webContents.send('update-chat', errorItem);
             });
     }
 
@@ -354,6 +385,7 @@ app.whenReady().then(() => {
 
     app.on('will-quit', () => {
         globalShortcut.unregisterAll();
+        saveChatHistory();
     });
 
     app.on('ready', () => {
