@@ -15,8 +15,7 @@ const status = document.getElementById('status');
 
 const keybindButtons = {
     toggle: document.getElementById('toggle-window-bind'),
-    screenshot: document.getElementById('screenshot-bind'),
-    history: document.getElementById('history-bind')
+    screenshot: document.getElementById('screenshot-bind')
 };
 
 let config = null;
@@ -35,8 +34,7 @@ const defaultConfig = {
     },
     keybinds: {
         toggle_window: 'Control+K',
-        take_screenshot: 'Control+Enter',
-        show_history: 'Control+H'
+        take_screenshot: 'Control+Enter'
     },
     model: {
         current: 'deepseek-coder-v2:16b',
@@ -51,7 +49,6 @@ const defaultConfig = {
 async function initializeSettings() {
     keybindButtons.toggle = document.getElementById('toggle-window-bind');
     keybindButtons.screenshot = document.getElementById('screenshot-bind');
-    keybindButtons.history = document.getElementById('history-bind');
     
     try {
         config = await window.electronAPI.getConfig();
@@ -68,9 +65,6 @@ async function initializeSettings() {
             }
             if (!config.keybinds.take_screenshot) {
                 config.keybinds.take_screenshot = defaultConfig.keybinds.take_screenshot;
-            }
-            if (!config.keybinds.show_history) {
-                config.keybinds.show_history = defaultConfig.keybinds.show_history;
             }
         }
         
@@ -108,11 +102,6 @@ function updateKeybindButtons() {
     if (keybindButtons.screenshot) {
         const screenshotKeybind = config.keybinds.take_screenshot || defaultConfig.keybinds.take_screenshot;
         keybindButtons.screenshot.textContent = screenshotKeybind;
-    }
-    
-    if (keybindButtons.history) {
-        const historyKeybind = config.keybinds.show_history || defaultConfig.keybinds.show_history;
-        keybindButtons.history.textContent = historyKeybind;
     }
 }
 
@@ -264,7 +253,6 @@ saveSettingsBtn.addEventListener('click', async () => {
         
         if (!config.keybinds.toggle_window) config.keybinds.toggle_window = defaultConfig.keybinds.toggle_window;
         if (!config.keybinds.take_screenshot) config.keybinds.take_screenshot = defaultConfig.keybinds.take_screenshot;
-        if (!config.keybinds.show_history) config.keybinds.show_history = defaultConfig.keybinds.show_history;
         
         if (!config.model.current) config.model.current = defaultConfig.model.current;
         if (!config.model.available_models || typeof config.model.available_models !== 'object') {
@@ -351,8 +339,6 @@ document.addEventListener('keydown', (e) => {
                 config.keybinds.toggle_window = keybind;
             } else if (currentKeybindButton === keybindButtons.screenshot) {
                 config.keybinds.take_screenshot = keybind;
-            } else if (currentKeybindButton === keybindButtons.history) {
-                config.keybinds.show_history = keybind;
             }
             
             saveKeybindChanges(keybind);
@@ -375,16 +361,6 @@ async function saveKeybindChanges(keybind) {
     }
 }
 
-document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 'h' && !isRecordingKeybind) {
-        e.preventDefault();
-        
-        if (toggleSidebarBtn) {
-            toggleSidebarBtn.click();
-        }
-    }
-});
-
 discardSettingsBtn.addEventListener('click', () => {
     config = JSON.parse(JSON.stringify(originalConfig));
     initializeSettings();
@@ -402,6 +378,42 @@ function updateStatus(message) {
     }, 3000);
 }
 
+function processCodeBlocks(text) {
+    if (!text) return '';
+    
+    // First escape HTML in the entire text to prevent XSS
+    text = escapeHtml(text);
+    
+    // Replace ```language\ncode\n``` blocks with proper HTML
+    return text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, language, code) => {
+        // Default to plaintext if no language is specified
+        language = language ? language.toLowerCase() : 'plaintext';
+        
+        // Map common language aliases
+        const languageMap = {
+            'js': 'javascript',
+            'ts': 'typescript',
+            'py': 'python',
+            'rb': 'ruby',
+            'cs': 'csharp',
+            'cpp': 'cpp',
+            'jsx': 'jsx',
+            'tsx': 'tsx'
+        };
+        
+        const mappedLanguage = languageMap[language] || language;
+        
+        return `
+            <div class="code-block">
+                <div class="code-block-header">
+                    <span class="language-badge">${language}</span>
+                </div>
+                <pre class="line-numbers language-${mappedLanguage}"><code class="language-${mappedLanguage}">${code.trim()}</code></pre>
+            </div>
+        `;
+    });
+}
+
 function addChatItem(data, container) {
     const chatItem = document.createElement('div');
     chatItem.className = 'chat-item';
@@ -412,20 +424,38 @@ function addChatItem(data, container) {
     
     const content = document.createElement('div');
     content.className = 'content';
-    content.textContent = data.user;
+    content.innerHTML = processCodeBlocks(data.user);
     
     const ollama = document.createElement('div');
     ollama.className = 'ollama';
-    ollama.textContent = data.ollama;
+    ollama.innerHTML = processCodeBlocks(data.ollama);
     
     chatItem.appendChild(timestamp);
     chatItem.appendChild(content);
     chatItem.appendChild(ollama);
     
     container.appendChild(chatItem);
+    
+    // Highlight all code blocks in this chat item
+    requestAnimationFrame(() => {
+        chatItem.querySelectorAll('pre code').forEach((block) => {
+            if (!block.classList.contains('prism-highlighted')) {
+                Prism.highlightElement(block);
+                block.classList.add('prism-highlighted');
+            }
+        });
+    });
+    
+    // Scroll to bottom
     container.scrollTop = container.scrollHeight;
     
     return chatItem;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function addChatSessionToSidebar(session) {
@@ -611,3 +641,105 @@ window.electronAPI.onUpdateChat((data) => {
     // Add to main chat area
     addChatItem(data, chatList);
 });
+
+// Update the chat list styles to enable proper scrolling
+const style = document.createElement('style');
+style.textContent = `
+    #chat-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        padding-bottom: 20px;
+        height: calc(100vh - 160px);  /* Adjusted height to account for toolbar and compact shortcuts */
+        scrollbar-width: thin;
+        scrollbar-color: var(--primary-color) transparent;
+    }
+
+    #chat-list::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    #chat-list::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    #chat-list::-webkit-scrollbar-thumb {
+        background-color: var(--primary-color);
+        border-radius: 4px;
+    }
+
+    #chat-container {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 110px);  /* Adjusted for toolbar and compact shortcuts */
+        overflow: hidden;
+        margin-bottom: 0;  /* Remove bottom margin to maximize space */
+    }
+`;
+document.head.appendChild(style);
+
+// Add styles for code blocks
+const codeBlockStyles = document.createElement('style');
+codeBlockStyles.textContent = `
+    .code-block {
+        margin: 1rem 0;
+        border-radius: 8px;
+        overflow: hidden;
+        background: rgba(0, 0, 0, 0.3);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .code-block-header {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        background: rgba(0, 0, 0, 0.4);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .language-badge {
+        background: var(--primary-color);
+        color: white;
+        padding: 0.2rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .code-block pre {
+        margin: 0 !important;
+        padding: 1rem !important;
+        background: transparent !important;
+        font-family: 'JetBrains Mono', monospace !important;
+    }
+
+    .code-block code {
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 14px !important;
+        line-height: 1.5 !important;
+        tab-size: 4 !important;
+    }
+
+    /* Ensure code blocks don't overflow */
+    .code-block pre code {
+        white-space: pre-wrap !important;
+        word-break: break-word !important;
+    }
+
+    /* Custom scrollbar for code blocks */
+    .code-block pre::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .code-block pre::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .code-block pre::-webkit-scrollbar-thumb {
+        background: var(--primary-color);
+        border-radius: 4px;
+    }
+`;
+document.head.appendChild(codeBlockStyles);

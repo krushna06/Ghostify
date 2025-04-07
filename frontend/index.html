@@ -4,16 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ghostify</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
     <style>
         :root {
-            --bg-color: #0d1117;
-            --sidebar-bg: #161b22;
-            --text-color: #c9d1d9;
-            --primary-color: #58a6ff;
-            --secondary-bg: #21262d;
-            --border-color: #30363d;
+            --bg-color: rgba(13, 17, 23, 0.7);
+            --sidebar-bg: rgba(22, 27, 34, 0.8);
+            --text-color: #ffffff;
+            --primary-color: #FFA116;
+            --secondary-bg: rgba(33, 38, 45, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
             --error-color: #f85149;
             --success-color: #238636;
+            --button-hover: #FF8A00;
         }
 
         * {
@@ -34,25 +39,27 @@
             display: flex;
             height: 100vh;
             position: relative;
+            background: var(--bg-color);
+            backdrop-filter: blur(10px);
         }
 
-        /* Sidebar */
         #sidebar {
             position: fixed;
             top: 0;
-            left: -300px;  /* Start off-screen */
+            left: -300px;
             height: 100vh;
-            width: 300px;  /* Fixed width */
-            background: var(--secondary-bg);
-            transition: left 0.3s ease;  /* Animate the left position */
+            width: 300px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            transition: left 0.3s ease;
             overflow-y: auto;
             z-index: 1000;
             border-right: 1px solid var(--border-color);
-            display: block;  /* Always display, but off-screen */
+            display: block;
         }
 
         #sidebar.open {
-            left: 0;  /* Move on-screen */
+            left: 0;
         }
 
         #chat-history {
@@ -61,7 +68,6 @@
             padding: 1rem;
         }
 
-        /* Main Content */
         #main-content {
             flex: 1;
             margin-left: 0;
@@ -69,14 +75,16 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
-            position: relative;  /* Add this for absolute positioning of children */
+            position: relative;
+            background: var(--bg-color);
+            backdrop-filter: blur(5px);
+            padding-bottom: 60px;
         }
 
         #main-content.sidebar-open {
             margin-left: 300px;
         }
 
-        /* Toolbar */
         #toolbar {
             display: flex;
             justify-content: space-between;
@@ -84,25 +92,25 @@
             padding: 1rem;
             background: var(--sidebar-bg);
             border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         #chat-list {
             flex: 1;
             overflow-y: auto;
-            padding: 1rem;
-            padding-bottom: 100px;  /* Add padding to prevent chat messages from being hidden behind the gradient */
+            padding-bottom: 20px;
         }
 
-        /* Buttons */
         .icon-button {
             background: none;
             border: none;
-            color: var(--text-color);
+            color: var(--primary-color);
             font-size: 1.2rem;
             cursor: pointer;
             padding: 0.5rem;
             border-radius: 4px;
-            transition: background-color 0.2s;
+            transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -111,25 +119,27 @@
         }
 
         .icon-button:hover {
-            background: var(--secondary-bg);
+            background: rgba(255, 161, 22, 0.1);
+            color: var(--button-hover);
         }
 
         .primary-button {
             background: var(--primary-color);
-            color: var(--text-color);
+            color: white;
             border: none;
             padding: 0.5rem 1rem;
             border-radius: 4px;
             cursor: pointer;
             font-size: 0.9rem;
-            transition: opacity 0.2s;
+            transition: all 0.2s;
+            font-weight: 600;
         }
 
         .primary-button:hover {
-            opacity: 0.9;
+            background: var(--button-hover);
+            opacity: 1;
         }
 
-        /* Modal */
         .modal {
             display: none;
             position: fixed;
@@ -148,7 +158,8 @@
         }
 
         .modal-content {
-            background: var(--sidebar-bg);
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(15px);
             padding: 2rem;
             border-radius: 8px;
             width: 90%;
@@ -169,7 +180,6 @@
             color: var(--text-color);
         }
 
-        /* Settings */
         .settings-section {
             margin-bottom: 2rem;
         }
@@ -193,7 +203,6 @@
             color: var(--text-color);
         }
 
-        /* Transparency Slider */
         #transparency {
             flex: 1;
             accent-color: var(--primary-color);
@@ -204,11 +213,10 @@
             text-align: right;
         }
 
-        /* Keybind Buttons */
         .keybind-button {
-            background: var(--secondary-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-color);
+            background: var(--primary-color);
+            color: white;
+            border: none;
             padding: 0.5rem 1rem;
             border-radius: 4px;
             cursor: pointer;
@@ -217,23 +225,22 @@
             transition: all 0.2s;
             font-family: monospace;
             font-size: 0.9rem;
+            font-weight: 600;
         }
 
         .keybind-button:hover {
-            border-color: var(--primary-color);
-            background: var(--bg-color);
+            background: var(--button-hover);
         }
 
-        /* Chat Items */
         .chat-item {
             background: var(--secondary-bg);
             padding: 1rem;
             margin-bottom: 1rem;
             border-radius: 8px;
-            border: 1px solid var(--border-color);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
-        /* Chat Session Items in Sidebar */
         .chat-session-item {
             background: var(--secondary-bg);
             padding: 1rem;
@@ -283,7 +290,6 @@
             white-space: pre-wrap;
         }
 
-        /* Modal Footer */
         .modal-footer {
             margin-top: 2rem;
             display: flex;
@@ -307,7 +313,6 @@
             background: var(--bg-color);
         }
 
-        /* Keybind recording indicator */
         .keybind-button.recording {
             border-color: var(--primary-color);
             background: var(--bg-color);
@@ -324,15 +329,18 @@
             100% { border-color: var(--primary-color); }
         }
 
-        /* Remove the dot indicator */
         .keybind-button.recording::after {
             display: none;
         }
 
-        /* Status */
         #status {
             color: var(--text-color);
             font-size: 0.9rem;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            background: var(--secondary-bg);
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .setting-note {
@@ -342,21 +350,23 @@
             font-style: italic;
         }
 
-        /* Keyboard shortcuts info */
         .shortcuts-info {
-            position: absolute;
+            position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: var(--bg-color);
-            padding: 0.75rem 1rem;
-            border-top: 1px solid var(--border-color);
+            background: var(--sidebar-bg);
+            padding: 0.8rem;
+            border-top: 2px solid var(--primary-color);
             display: flex;
             justify-content: center;
-            gap: 1rem;
-            font-size: 0.9rem;
-            color: #8b949e;
-            z-index: 2;  /* Ensure it's above the gradient */
+            gap: 3rem;
+            font-size: 0.85rem;
+            color: white;
+            z-index: 2;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.2);
+            height: 50px;
         }
 
         .shortcut-item {
@@ -366,22 +376,23 @@
         }
 
         .shortcut-key {
-            background: var(--bg-color);
-            padding: 0.2rem 0.5rem;
+            background: var(--primary-color);
+            color: white;
+            padding: 0.2rem 0.4rem;
             border-radius: 4px;
-            border: 1px solid var(--border-color);
+            border: none;
             font-family: monospace;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            font-weight: 600;
         }
 
-        /* Toolbar layout */
         .toolbar-buttons {
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        /* Discord button */
         .discord-btn {
             color: #5865F2;
             transition: transform 0.2s, color 0.2s;
@@ -392,7 +403,6 @@
             transform: scale(1.1);
         }
 
-        /* Sidebar Header and New Chat Button */
         .sidebar-header {
             padding: 1rem;
             border-bottom: 1px solid var(--border-color);
@@ -413,7 +423,6 @@
             width: calc(100% - 2rem);
         }
         
-        /* Close Sidebar Button */
         #close-sidebar {
             position: absolute;
             top: 1rem;
@@ -421,7 +430,6 @@
             z-index: 10;
         }
         
-        /* Empty State */
         .empty-state {
             display: flex;
             flex-direction: column;
@@ -450,19 +458,10 @@
             max-width: 400px;
         }
 
-        /* Transparent break */
         .transparent-break {
-            position: absolute;
-            bottom: 60px;  /* Adjust based on shortcuts-info height */
-            left: 0;
-            right: 0;
-            height: 40px;
-            background: linear-gradient(to bottom, transparent, var(--bg-color));
-            pointer-events: none;  /* Allow clicking through the gradient */
-            z-index: 1;
+            display: none;
         }
 
-        /* Add styles for the select input */
         .select-input {
             background: var(--secondary-bg);
             color: var(--text-color);
@@ -490,6 +489,56 @@
             color: var(--text-color);
             padding: 0.5rem;
         }
+
+        #chat-container {
+            flex: 1;
+            padding: 1.5rem;
+            background: var(--bg-color);
+            border-radius: 8px;
+            margin: 1rem;
+            margin-bottom: 80px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+            overflow-y: auto;
+            height: calc(100vh - 140px);
+        }
+
+        pre[class*="language-"] {
+            background: rgba(0, 0, 0, 0.3) !important;
+            border-radius: 8px;
+            margin: 1rem 0;
+            padding: 1rem !important;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        code[class*="language-"] {
+            text-shadow: none !important;
+            background: none !important;
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 14px !important;
+        }
+
+        .code-block-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 0, 0, 0.4);
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            color: #8b949e;
+        }
+
+        .language-badge {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -508,18 +557,13 @@
                 <button id="toggle-sidebar" class="icon-button">☰</button>
                 <span id="status">Ready</span>
                 <div class="toolbar-buttons">
-                    <a href="https://discord.gg/ghostify" target="_blank" class="icon-button discord-btn" title="Join Discord">
-                        <svg width="16" height="16" viewBox="0 0 71 55" fill="currentColor">
-                            <path d="M60.1045 4.8978C55.5792 2.8214 50.7265 1.2916 45.6527 0.41542C45.5603 0.39851 45.468 0.440769 45.4204 0.525289C44.7963 1.6353 44.105 3.0834 43.6209 4.2216C38.1637 3.4046 32.7345 3.4046 27.3892 4.2216C26.905 3.0581 26.1886 1.6353 25.5617 0.525289C25.5141 0.443589 25.4218 0.40133 25.3294 0.41542C20.2584 1.2888 15.4057 2.8186 10.8776 4.8978C10.8384 4.9147 10.8048 4.9429 10.7825 4.9795C1.57795 18.7309 -0.943561 32.1443 0.293408 45.3914C0.299005 45.4562 0.335386 45.5182 0.385761 45.5576C6.45866 50.0174 12.3413 52.7249 18.1147 54.5195C18.2071 54.5477 18.305 54.5139 18.3638 54.4378C19.7295 52.5728 20.9469 50.6063 21.9907 48.5383C22.0523 48.4172 21.9935 48.2735 21.8676 48.2256C19.9366 47.4931 18.0979 46.6 16.3292 45.5858C16.1893 45.5041 16.1781 45.304 16.3068 45.2082C16.679 44.9293 17.0513 44.6391 17.4067 44.3461C17.471 44.2926 17.5606 44.2813 17.6362 44.3151C29.2558 49.6202 41.8354 49.6202 53.3179 44.3151C53.3935 44.2785 53.4831 44.2898 53.5502 44.3433C53.9057 44.6363 54.2779 44.9293 54.6529 45.2082C54.7816 45.304 54.7732 45.5041 54.6333 45.5858C52.8646 46.6197 51.0259 47.4931 49.0921 48.2228C48.9662 48.2707 48.9102 48.4172 48.9718 48.5383C50.038 50.6034 51.2554 52.5699 52.5959 54.435C52.6519 54.5139 52.7526 54.5477 52.845 54.5195C58.6464 52.7249 64.529 50.0174 70.6019 45.5576C70.6551 45.5182 70.6887 45.459 70.6943 45.3942C72.1747 30.0791 68.2147 16.7757 60.1968 4.9823C60.1772 4.9429 60.1437 4.9147 60.1045 4.8978ZM23.7259 37.3253C20.2276 37.3253 17.3451 34.1136 17.3451 30.1693C17.3451 26.225 20.1717 23.0133 23.7259 23.0133C27.308 23.0133 30.1626 26.2532 30.1066 30.1693C30.1066 34.1136 27.28 37.3253 23.7259 37.3253ZM47.3178 37.3253C43.8196 37.3253 40.9371 34.1136 40.9371 30.1693C40.9371 26.225 43.7636 23.0133 47.3178 23.0133C50.9 23.0133 53.7545 26.2532 53.6986 30.1693C53.6986 34.1136 50.9 37.3253 47.3178 37.3253Z" />
-                        </svg>
-                    </a>
                     <button id="settings-btn" class="icon-button">⚙</button>
                 </div>
             </div>
             
-            <div id="chat-list"></div>
-            
-            <div class="transparent-break"></div>
+            <div id="chat-container">
+                <div id="chat-list"></div>
+            </div>
             
             <div class="shortcuts-info">
                 <div class="shortcut-item">
@@ -529,10 +573,6 @@
                 <div class="shortcut-item">
                     <span class="shortcut-key">Ctrl+Enter</span>
                     <span>Take Screenshot</span>
-                </div>
-                <div class="shortcut-item">
-                    <span class="shortcut-key">Ctrl+H</span>
-                    <span>Show History</span>
                 </div>
             </div>
         </div>
@@ -556,9 +596,7 @@
                     <h3>AI Model</h3>
                     <div class="setting-row">
                         <label>Select Model:</label>
-                        <select id="ai-model" class="select-input">
-                            <!-- Options will be populated from config -->
-                        </select>
+                        <select id="ai-model" class="select-input"></select>
                     </div>
                     <div class="setting-note">
                         Note: Higher parameter models will use more RAM and CPU resources
@@ -588,6 +626,27 @@
             </div>
         </div>
     </div>  
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-jsx.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-tsx.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-ruby.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-rust.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js"></script>
     <script src="renderer.js"></script>
 </body>
 </html>
