@@ -193,13 +193,19 @@ app.whenReady().then(() => {
         })
             .then(response => {
                 const { text, ollama_response } = response.data;
-                chatHistory.push({ user: text, ollama: ollama_response });
-                mainWindow.webContents.send('update-chat', { user: text, ollama: ollama_response });
+                const chatItem = { 
+                    user: text, 
+                    ollama: ollama_response,
+                    timestamp: new Date().toISOString()
+                };
+                chatHistory.push(chatItem);
+                mainWindow.webContents.send('update-chat', chatItem);
             })
             .catch(error => {
                 mainWindow.webContents.send('update-chat', { 
                     user: 'Error processing image', 
-                    ollama: 'Failed to process the screenshot. Please try again.' 
+                    ollama: 'Failed to process the screenshot. Please try again.',
+                    timestamp: new Date().toISOString()
                 });
             });
     }
@@ -308,6 +314,37 @@ app.whenReady().then(() => {
         } else {
             mainWindow.show();
             mainWindow.webContents.send('window-visibility-changed', true);
+        }
+    });
+
+    ipcMain.handle('load-chat-session', async (_, sessionId) => {
+        try {
+            if (!Array.isArray(chatHistory)) {
+                return { 
+                    id: sessionId,
+                    timestamp: new Date().toISOString(),
+                    messages: []
+                };
+            }
+            
+            const sessionDate = new Date(sessionId);
+            const sessionMessages = chatHistory.filter(msg => {
+                const msgDate = new Date(msg.timestamp || Date.now());
+                return msgDate.toDateString() === sessionDate.toDateString();
+            });
+            
+            return {
+                id: sessionId,
+                timestamp: sessionDate.toISOString(),
+                messages: sessionMessages
+            };
+        } catch (error) {
+            console.error('Error loading chat session:', error);
+            return { 
+                id: sessionId,
+                timestamp: new Date().toISOString(),
+                messages: [] 
+            };
         }
     });
 
