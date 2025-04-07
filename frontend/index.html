@@ -69,6 +69,7 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
+            position: relative;  /* Add this for absolute positioning of children */
         }
 
         #main-content.sidebar-open {
@@ -89,6 +90,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 1rem;
+            padding-bottom: 100px;  /* Add padding to prevent chat messages from being hidden behind the gradient */
         }
 
         /* Buttons */
@@ -231,6 +233,37 @@
             border: 1px solid var(--border-color);
         }
 
+        /* Chat Session Items in Sidebar */
+        .chat-session-item {
+            background: var(--secondary-bg);
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chat-session-item:hover {
+            background: var(--bg-color);
+            border-color: var(--primary-color);
+        }
+
+        .session-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .session-preview {
+            font-size: 0.9rem;
+            color: var(--text-color);
+            opacity: 0.8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         .chat-item .timestamp {
             color: #8b949e;
             font-size: 0.9rem;
@@ -312,17 +345,18 @@
         /* Keyboard shortcuts info */
         .shortcuts-info {
             position: absolute;
-            bottom: 1rem;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--secondary-bg);
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-color);
             padding: 0.75rem 1rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
+            border-top: 1px solid var(--border-color);
             display: flex;
+            justify-content: center;
             gap: 1rem;
             font-size: 0.9rem;
             color: #8b949e;
+            z-index: 2;  /* Ensure it's above the gradient */
         }
 
         .shortcut-item {
@@ -357,12 +391,115 @@
             color: #7984F5;
             transform: scale(1.1);
         }
+
+        /* Sidebar Header and New Chat Button */
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .sidebar-header h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        
+        #new-chat-btn {
+            margin: 1rem;
+            width: calc(100% - 2rem);
+        }
+        
+        /* Close Sidebar Button */
+        #close-sidebar {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 10;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 50vh;
+            color: #8b949e;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+        
+        .empty-state-title {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .empty-state-text {
+            font-size: 0.9rem;
+            max-width: 400px;
+        }
+
+        /* Transparent break */
+        .transparent-break {
+            position: absolute;
+            bottom: 60px;  /* Adjust based on shortcuts-info height */
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(to bottom, transparent, var(--bg-color));
+            pointer-events: none;  /* Allow clicking through the gradient */
+            z-index: 1;
+        }
+
+        /* Add styles for the select input */
+        .select-input {
+            background: var(--secondary-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            min-width: 200px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .select-input:hover {
+            border-color: var(--primary-color);
+        }
+
+        .select-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+        }
+
+        .select-input option {
+            background: var(--bg-color);
+            color: var(--text-color);
+            padding: 0.5rem;
+        }
     </style>
 </head>
 <body>
     <div id="app">
         <div id="sidebar">
             <button id="close-sidebar" class="icon-button">×</button>
+            <div class="sidebar-header">
+                <h2>Chat History</h2>
+            </div>
+            <button id="new-chat-btn" class="primary-button">New Chat</button>
             <div id="chat-history"></div>
         </div>
         
@@ -381,6 +518,8 @@
             </div>
             
             <div id="chat-list"></div>
+            
+            <div class="transparent-break"></div>
             
             <div class="shortcuts-info">
                 <div class="shortcut-item">
@@ -413,24 +552,37 @@
                     </div>
                 </div>
                 
+                <div class="settings-section">
+                    <h3>AI Model</h3>
+                    <div class="setting-row">
+                        <label>Select Model:</label>
+                        <select id="ai-model" class="select-input">
+                            <!-- Options will be populated from config -->
+                        </select>
+                    </div>
+                    <div class="setting-note">
+                        Note: Higher parameter models will use more RAM and CPU resources
+                    </div>
+                </div>
                 
                 <div class="settings-section">
                     <h3>Keyboard Shortcuts</h3>
                     <div class="setting-row">
                         <label>Toggle Window:</label>
-                        <button id="toggle-window-bind" class="keybind-button"></button>
+                        <button id="toggle-window-bind" class="keybind-button" data-default="Control+K">Control+K</button>
                     </div>
                     <div class="setting-row">
                         <label>Take Screenshot:</label>
-                        <button id="screenshot-bind" class="keybind-button"></button>
+                        <button id="screenshot-bind" class="keybind-button" data-default="Control+Enter">Control+Enter</button>
                     </div>
                     <div class="setting-row">
                         <label>Show History:</label>
-                        <button id="history-bind" class="keybind-button"></button>
+                        <button id="history-bind" class="keybind-button" data-default="Control+H">Control+H</button>
                     </div>
                 </div>
                 
                 <div class="modal-footer">
+                    <button id="discard-settings" class="secondary-button">Discard Changes</button>
                     <button id="save-settings" class="primary-button">Save Changes</button>
                 </div>
             </div>
