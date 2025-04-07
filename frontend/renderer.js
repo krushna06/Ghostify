@@ -6,7 +6,7 @@ const settingsModal = document.getElementById('settings-modal');
 const closeSettingsBtn = document.getElementById('close-settings');
 const saveSettingsBtn = document.getElementById('save-settings');
 const discardSettingsBtn = document.getElementById('discard-settings');
-const modelSelect = document.getElementById('model-select');
+const modelSelect = document.getElementById('ai-model');
 const transparencySlider = document.getElementById('transparency');
 const transparencyValue = document.getElementById('transparency-value');
 const chatList = document.getElementById('chat-list');
@@ -23,6 +23,10 @@ let config = null;
 let originalConfig = null;
 let isRecordingKeybind = false;
 let currentKeybindButton = null;
+let currentChatSession = {
+    id: Date.now().toString(),
+    messages: []
+};
 
 const defaultConfig = {
     appearance: {
@@ -113,29 +117,25 @@ function updateKeybindButtons() {
 }
 
 function populateModelSelect() {
+    const modelSelect = document.getElementById('ai-model');
     if (!modelSelect) {
+        console.error('Model select element not found');
         return;
     }
     
     modelSelect.innerHTML = '';
     
     try {
-        if (!config || !config.model) {
+        if (!config || !config.model || !config.model.available_models) {
+            console.error('No model configuration found');
             return;
         }
         
         const models = config.model.available_models;
-        
-        if (!models || typeof models !== 'object') {
-            return;
-        }
-        
-        const currentModel = config.model.current || '';
+        const currentModel = config.model.current || defaultConfig.model.current;
         
         Object.entries(models).forEach(([category, modelList]) => {
-            if (!Array.isArray(modelList)) {
-                return;
-            }
+            if (!Array.isArray(modelList)) return;
             
             const group = document.createElement('optgroup');
             group.label = category;
@@ -155,7 +155,9 @@ function populateModelSelect() {
             modelSelect.selectedIndex = 0;
             config.model.current = modelSelect.options[0].value;
         }
-    } catch (error) {}
+    } catch (error) {
+        console.error('Error populating model select:', error);
+    }
 }
 
 function startRecordingKeybind(button) {
@@ -188,12 +190,29 @@ toggleSidebarBtn.addEventListener('click', async () => {
                 chatHistory.innerHTML = '';
                 
                 if (Array.isArray(history) && history.length > 0) {
+                    // Group messages by session
+                    const sessions = {};
                     history.forEach(item => {
-                        addChatItem(item, chatHistory);
+                        const date = new Date(item.timestamp || Date.now());
+                        const sessionKey = date.toDateString();
+                        
+                        if (!sessions[sessionKey]) {
+                            sessions[sessionKey] = {
+                                id: sessionKey,
+                                timestamp: date,
+                                messages: []
+                            };
+                        }
+                        sessions[sessionKey].messages.push(item);
+                    });
+                    
+                    // Add each session to sidebar
+                    Object.values(sessions).sort((a, b) => b.timestamp - a.timestamp).forEach(session => {
+                        addChatSessionToSidebar(session);
                     });
                 } else {
                     const emptyMessage = document.createElement('div');
-                    emptyMessage.className = 'chat-item';
+                    emptyMessage.className = 'chat-session-item';
                     emptyMessage.textContent = 'No chat history yet. Take a screenshot to get started.';
                     chatHistory.appendChild(emptyMessage);
                 }
@@ -221,6 +240,7 @@ closeSidebarBtn.addEventListener('click', () => {
 
 settingsBtn.addEventListener('click', () => {
     settingsModal.classList.add('open');
+    initializeSettings();
 });
 
 closeSettingsBtn.addEventListener('click', () => {
@@ -272,19 +292,6 @@ transparencySlider.addEventListener('input', (e) => {
     const value = e.target.value;
     transparencyValue.textContent = `${value}%`;
     config.appearance.transparency = value / 100;
-});
-
-modelSelect.addEventListener('change', async (e) => {
-    const selectedModel = e.target.value;
-    if (selectedModel) {
-        config.model.current = selectedModel;
-        try {
-            await window.electronAPI.updateConfig(config);
-            updateStatus(`Model changed to: ${selectedModel}`);
-        } catch (error) {
-            updateStatus('Failed to update model');
-        }
-    }
 });
 
 Object.values(keybindButtons).forEach(button => {
@@ -401,7 +408,7 @@ function addChatItem(data, container) {
     
     const timestamp = document.createElement('div');
     timestamp.className = 'timestamp';
-    timestamp.textContent = new Date().toLocaleTimeString();
+    timestamp.textContent = new Date(data.timestamp).toLocaleTimeString();
     
     const content = document.createElement('div');
     content.className = 'content';
@@ -417,17 +424,123 @@ function addChatItem(data, container) {
     
     container.appendChild(chatItem);
     container.scrollTop = container.scrollHeight;
+    
+    return chatItem;
 }
 
-document.addEventListener('DOMContentLoaded', initializeSettings);
+function addChatSessionToSidebar(session) {
+    const sessionItem = document.createElement('div');
+    sessionItem.className = 'chat-session-item';
+    
+    const sessionDate = new Date(session.timestamp);
+    const formattedDate = sessionDate.toLocaleDateString() + ' ' + sessionDate.toLocaleTimeString();
+    
+    sessionItem.innerHTML = `
+        <div class="session-title">Chat: ${formattedDate}</div>
+        <div class="session-preview">${session.messages[0]?.user || 'Empty chat'}</div>
+    `;
+    
+    // Load session when clicked
+    sessionItem.addEventListener('click', async () => {
+        try {
+            const sessionData = await window.electronAPI.loadChatSession(session.timestamp);
+            
+            // Clear and update main chat area
+            if (chatList) {
+                chatList.innerHTML = '';
+                sessionData.messages.forEach(msg => addChatItem(msg, chatList));
+            }
+            
+            // Close sidebar on mobile
+            if (window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+                document.getElementById('main-content').classList.remove('sidebar-open');
+            }
+        } catch (error) {
+            console.error('Error loading chat session:', error);
+        }
+    });
+    
+    chatHistory.appendChild(sessionItem);
+}
 
-window.electronAPI.onUpdateChat((data) => {
-    addChatItem(data, chatList);
-});
+function loadChatSession(session) {
+    if (!chatList) return;
+    
+    // Store current session ID
+    currentChatSession = session;
+    
+    // Clear main chat area
+    chatList.innerHTML = '';
+    
+    // Add all messages from this session to the main area
+    if (Array.isArray(session.messages)) {
+        session.messages.forEach(msg => {
+            addChatItem(msg, chatList);
+        });
+    }
+    
+    // Update status
+    updateStatus(`Loaded chat from ${new Date(session.timestamp).toLocaleString()}`);
+}
 
-window.electronAPI.onShowChatHistory((history) => {
-    if (toggleSidebarBtn) {
-        toggleSidebarBtn.click();
+function createNewChatSession() {
+    // Create a new session
+    currentChatSession = {
+        id: Date.now().toString(),
+        timestamp: new Date(),
+        messages: []
+    };
+    
+    // Clear main chat area
+    if (chatList) {
+        chatList.innerHTML = '';
+    }
+    
+    updateStatus('Started new chat');
+}
+
+function showEmptyState() {
+    if (!chatHistory) return;
+    
+    const emptyState = document.createElement('div');
+    emptyState.className = 'empty-state';
+    emptyState.innerHTML = `
+        <div class="empty-state-icon">📸</div>
+        <div class="empty-state-title">No Chat History</div>
+        <div class="empty-state-text">Take a screenshot (Ctrl+Enter) to start a new chat</div>
+    `;
+    
+    chatHistory.appendChild(emptyState);
+}
+
+window.electronAPI.onShowChatHistory(async (history) => {
+    if (!chatHistory) return;
+    
+    chatHistory.innerHTML = '';
+    
+    if (Array.isArray(history) && history.length > 0) {
+        // Group messages by date
+        const sessions = history.reduce((acc, msg) => {
+            const date = new Date(msg.timestamp || Date.now());
+            const dateKey = date.toDateString();
+            
+            if (!acc[dateKey]) {
+                acc[dateKey] = {
+                    timestamp: date,
+                    messages: []
+                };
+            }
+            acc[dateKey].messages.push(msg);
+            return acc;
+        }, {});
+        
+        // Add sessions to sidebar
+        Object.values(sessions)
+            .sort((a, b) => b.timestamp - a.timestamp) // Sort newest first
+            .forEach(session => addChatSessionToSidebar(session));
+    } else {
+        showEmptyState();
     }
 });
 
@@ -442,4 +555,59 @@ window.electronAPI.onScreenshotTaken(() => {
 window.electronAPI.onOCRProcessing(() => {
     updateStatus('Processing image...');
 });
-  
+
+document.addEventListener('DOMContentLoaded', () => {
+    initializeSettings();
+    
+    // Initialize chat containers
+    if (chatList) {
+        chatList.innerHTML = '';
+    }
+    if (chatHistory) {
+        chatHistory.innerHTML = '';
+        showEmptyState();
+    }
+    
+    // Set up model select change handler
+    const modelSelect = document.getElementById('ai-model');
+    if (modelSelect) {
+        modelSelect.addEventListener('change', async (e) => {
+            const selectedModel = e.target.value;
+            if (selectedModel && config) {
+                config.model.current = selectedModel;
+                try {
+                    await window.electronAPI.updateConfig(config);
+                    updateStatus(`Model changed to: ${selectedModel}`);
+                } catch (error) {
+                    console.error('Failed to update model:', error);
+                    updateStatus('Failed to update model');
+                }
+            }
+        });
+    }
+    
+    // Set up new chat button
+    const newChatBtn = document.getElementById('new-chat-btn');
+    if (newChatBtn) {
+        newChatBtn.addEventListener('click', () => {
+            createNewChatSession();
+            if (chatList) {
+                chatList.innerHTML = '';
+            }
+            updateStatus('Started new chat');
+        });
+    }
+});
+
+window.electronAPI.onUpdateChat((data) => {
+    // Add timestamp if not present
+    if (!data.timestamp) {
+        data.timestamp = new Date().toISOString();
+    }
+    
+    // Add to current session
+    currentChatSession.messages.push(data);
+    
+    // Add to main chat area
+    addChatItem(data, chatList);
+});
