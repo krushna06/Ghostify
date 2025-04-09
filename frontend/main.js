@@ -26,7 +26,8 @@ function getDefaultConfig() {
             available_models: {
                 "Deepseek": ["deepseek-coder-v2:16b", "deepseek-coder-v2:236b"],
                 "Qwen": ["qwen2.5-coder:1.5b", "qwen2.5-coder:3b", "qwen2.5-coder:14b"],
-                "Codellama": ["codellama:7b", "codellama:13b"]
+                "Codellama": ["codellama:7b", "codellama:13b"],
+                "Others": ["qwen:15b", "falcon3:7b"]
             }
         }
     };
@@ -216,7 +217,7 @@ app.whenReady().then(() => {
                 ...formData.getHeaders(),
                 'X-Model': config.model.current
             },
-            timeout: 30000
+            timeout: 90000000
         })
             .then(response => {
                 const { text, ollama_response } = response.data;

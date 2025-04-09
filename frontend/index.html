@@ -529,6 +529,29 @@
             border-bottom: 1px solid var(--border-color);
             font-size: 0.85rem;
             color: #8b949e;
+            justify-content: space-between;
+        }
+
+        .copy-code-btn {
+            background: var(--secondary-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-code-btn:hover {
+            background: var(--bg-color);
+            border-color: var(--primary-color);
+        }
+
+        .copy-code-btn.copied {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
         }
 
         .language-badge {

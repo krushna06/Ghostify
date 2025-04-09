@@ -407,10 +407,30 @@ function processCodeBlocks(text) {
             <div class="code-block">
                 <div class="code-block-header">
                     <span class="language-badge">${language}</span>
+                    <button class="copy-code-btn" onclick="copyCode(this)">Copy</button>
                 </div>
                 <pre class="line-numbers language-${mappedLanguage}"><code class="language-${mappedLanguage}">${code.trim()}</code></pre>
             </div>
         `;
+    });
+}
+
+function copyCode(button) {
+    const codeBlock = button.closest('.code-block');
+    const code = codeBlock.querySelector('code').textContent;
+    
+    navigator.clipboard.writeText(code).then(() => {
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        button.classList.add('copied');
+        
+        setTimeout(() => {
+            button.textContent = originalText;
+            button.classList.remove('copied');
+        }, 2000);
+    }).catch(err => {
+        console.error('Failed to copy code:', err);
+        button.textContent = 'Failed to copy';
     });
 }
 

@@ -11,7 +11,7 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-OLLAMA_API_URL = "https://11434-krushna06-nullrepo-ke9esi8zzg8.ws-us118.gitpod.io/api/generate"
+OLLAMA_API_URL = "http://localhost:11434/api/generate"
 
 @app.route('/process-image', methods=['POST'])
 def process_image():
@@ -40,11 +40,32 @@ def process_image():
 
 def send_to_ollama(text):
     try:
+        prompt = f"""
+You are a coding interview assistant helping debug and improve solutions. Analyze these screenshots which include either error messages, incorrect outputs, or test cases, and provide detailed debugging help.
+Your response MUST follow this exact structure with these section headers (use ### for headers):
+
+### Specific Improvements and Corrections
+- List specific code changes needed as bullet points
+- DO NOT alter the function signature unless explicitly requested in the instructions. For example, do not add type annotations like `List[int]` ..etc or change return types unless there’s a compelling reason.
+
+### Optimizations
+- List any performance optimizations if applicable
+
+### The New Code
+Here provide the refactored/fixed code that passes all the test cases. Ensure the function signature remains unchanged unless explicitly stated in the corrections.
+
+Use proper markdown code blocks with language specification.
+
+Here's the text:
+{text}
+"""
+
         payload = {
             "model": "deepseek-coder-v2:16b",
-            "prompt": text,
+            "prompt": prompt,
             "stream": False
         }
+
         
         headers = {"Content-Type": "application/json"}
 
