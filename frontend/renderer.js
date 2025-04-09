@@ -179,7 +179,6 @@ toggleSidebarBtn.addEventListener('click', async () => {
                 chatHistory.innerHTML = '';
                 
                 if (Array.isArray(history) && history.length > 0) {
-                    // Group messages by session
                     const sessions = {};
                     history.forEach(item => {
                         const date = new Date(item.timestamp || Date.now());
@@ -195,7 +194,6 @@ toggleSidebarBtn.addEventListener('click', async () => {
                         sessions[sessionKey].messages.push(item);
                     });
                     
-                    // Add each session to sidebar
                     Object.values(sessions).sort((a, b) => b.timestamp - a.timestamp).forEach(session => {
                         addChatSessionToSidebar(session);
                     });
@@ -381,15 +379,11 @@ function updateStatus(message) {
 function processCodeBlocks(text) {
     if (!text) return '';
     
-    // First escape HTML in the entire text to prevent XSS
     text = escapeHtml(text);
     
-    // Replace ```language\ncode\n``` blocks with proper HTML
     return text.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, language, code) => {
-        // Default to plaintext if no language is specified
         language = language ? language.toLowerCase() : 'plaintext';
         
-        // Map common language aliases
         const languageMap = {
             'js': 'javascript',
             'ts': 'typescript',
@@ -456,7 +450,6 @@ function addChatItem(data, container) {
     
     container.appendChild(chatItem);
     
-    // Highlight all code blocks in this chat item
     requestAnimationFrame(() => {
         chatItem.querySelectorAll('pre code').forEach((block) => {
             if (!block.classList.contains('prism-highlighted')) {
@@ -466,7 +459,6 @@ function addChatItem(data, container) {
         });
     });
     
-    // Scroll to bottom
     container.scrollTop = container.scrollHeight;
     
     return chatItem;
@@ -490,18 +482,15 @@ function addChatSessionToSidebar(session) {
         <div class="session-preview">${session.messages[0]?.user || 'Empty chat'}</div>
     `;
     
-    // Load session when clicked
     sessionItem.addEventListener('click', async () => {
         try {
             const sessionData = await window.electronAPI.loadChatSession(session.timestamp);
             
-            // Clear and update main chat area
             if (chatList) {
                 chatList.innerHTML = '';
                 sessionData.messages.forEach(msg => addChatItem(msg, chatList));
             }
             
-            // Close sidebar on mobile
             if (window.innerWidth <= 768) {
                 sidebar.classList.remove('open');
                 document.getElementById('main-content').classList.remove('sidebar-open');
@@ -517,32 +506,26 @@ function addChatSessionToSidebar(session) {
 function loadChatSession(session) {
     if (!chatList) return;
     
-    // Store current session ID
     currentChatSession = session;
     
-    // Clear main chat area
     chatList.innerHTML = '';
     
-    // Add all messages from this session to the main area
     if (Array.isArray(session.messages)) {
         session.messages.forEach(msg => {
             addChatItem(msg, chatList);
         });
     }
     
-    // Update status
     updateStatus(`Loaded chat from ${new Date(session.timestamp).toLocaleString()}`);
 }
 
 function createNewChatSession() {
-    // Create a new session
     currentChatSession = {
         id: Date.now().toString(),
         timestamp: new Date(),
         messages: []
     };
     
-    // Clear main chat area
     if (chatList) {
         chatList.innerHTML = '';
     }
@@ -570,7 +553,6 @@ window.electronAPI.onShowChatHistory(async (history) => {
     chatHistory.innerHTML = '';
     
     if (Array.isArray(history) && history.length > 0) {
-        // Group messages by date
         const sessions = history.reduce((acc, msg) => {
             const date = new Date(msg.timestamp || Date.now());
             const dateKey = date.toDateString();
@@ -585,9 +567,8 @@ window.electronAPI.onShowChatHistory(async (history) => {
             return acc;
         }, {});
         
-        // Add sessions to sidebar
         Object.values(sessions)
-            .sort((a, b) => b.timestamp - a.timestamp) // Sort newest first
+            .sort((a, b) => b.timestamp - a.timestamp)
             .forEach(session => addChatSessionToSidebar(session));
     } else {
         showEmptyState();
@@ -609,7 +590,6 @@ window.electronAPI.onOCRProcessing(() => {
 document.addEventListener('DOMContentLoaded', () => {
     initializeSettings();
     
-    // Initialize chat containers
     if (chatList) {
         chatList.innerHTML = '';
     }
@@ -618,7 +598,6 @@ document.addEventListener('DOMContentLoaded', () => {
         showEmptyState();
     }
     
-    // Set up model select change handler
     const modelSelect = document.getElementById('ai-model');
     if (modelSelect) {
         modelSelect.addEventListener('change', async (e) => {
@@ -636,7 +615,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Set up new chat button
     const newChatBtn = document.getElementById('new-chat-btn');
     if (newChatBtn) {
         newChatBtn.addEventListener('click', () => {
@@ -650,19 +628,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.electronAPI.onUpdateChat((data) => {
-    // Add timestamp if not present
     if (!data.timestamp) {
         data.timestamp = new Date().toISOString();
     }
     
-    // Add to current session
     currentChatSession.messages.push(data);
     
-    // Add to main chat area
     addChatItem(data, chatList);
 });
 
-// Update the chat list styles to enable proper scrolling
 const style = document.createElement('style');
 style.textContent = `
     #chat-list {
@@ -698,7 +672,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Add styles for code blocks
 const codeBlockStyles = document.createElement('style');
 codeBlockStyles.textContent = `
     .code-block {
