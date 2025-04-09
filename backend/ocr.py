@@ -3,10 +3,16 @@ import pytesseract
 from PIL import Image
 import os
 import requests
+import configparser
 
 app = Flask(__name__)
 
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+config = configparser.ConfigParser()
+config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config.ini')
+config.read(config_path)
+model = config.get('model', 'current', fallback='deepseek-coder-v2:16b')
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -46,8 +52,8 @@ Your response MUST follow this exact structure with these section headers (use #
 
 ### Specific Improvements and Corrections
 - List specific code changes needed as bullet points
-- Do not use external packages/libraries unless explicitly requested in the instructions.
-- DO NOT alter the function signature unless explicitly requested in the instructions. For example, do not add type annotations like `List[int]` ..etc or change return types unless there’s a compelling reason.
+- Do not import any inbuilt/external packages/libraries unless explicitly requested in the instructions.
+- DO NOT alter the function signature unless explicitly requested in the instructions. For example, do not add type annotations like `List[]` ..etc or change return types unless there's a compelling reason.
 
 ### Optimizations
 - List any performance optimizations if applicable
