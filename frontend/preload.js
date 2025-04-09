@@ -12,5 +12,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onScreenshotTaken: (callback) => ipcRenderer.on('screenshot-taken', () => callback()),
     onOCRProcessing: (callback) => ipcRenderer.on('ocr-processing', () => callback()),
     onWindowVisibilityChanged: (callback) => ipcRenderer.on('window-visibility-changed', (_, isVisible) => callback(isVisible)),
-    onFullscreenChanged: (callback) => ipcRenderer.on('fullscreen-changed', (_, isFullscreen) => callback(isFullscreen))
+    onFullscreenChanged: (callback) => ipcRenderer.on('fullscreen-changed', (_, isFullscreen) => callback(isFullscreen)),
+    onOpenSettings: (callback) => ipcRenderer.on('open-settings', () => callback())
 });

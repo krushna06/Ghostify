@@ -27,7 +27,8 @@ function getDefaultConfig() {
         keybinds: {
             toggle_window: 'Control+K',
             take_screenshot: 'Control+Enter',
-            toggle_fullscreen: 'Control+F12'
+            toggle_fullscreen: 'Control+F12',
+            open_settings: 'Control+Alt+S'
         },
         model: {
             current: 'deepseek-coder-v2:16b',
@@ -56,7 +57,8 @@ function loadConfig() {
             keybinds: {
                 toggle_window: parsedConfig.keybinds?.toggle_window || 'Control+K',
                 take_screenshot: parsedConfig.keybinds?.take_screenshot || 'Control+Enter',
-                toggle_fullscreen: parsedConfig.keybinds?.toggle_fullscreen || 'Control+F12'
+                toggle_fullscreen: parsedConfig.keybinds?.toggle_fullscreen || 'Control+F12',
+                open_settings: parsedConfig.keybinds?.open_settings || 'Control+Alt+S'
             },
             model: {
                 current: parsedConfig.model?.current || 'deepseek-coder-v2:16b',
@@ -231,6 +233,16 @@ app.whenReady().then(() => {
                     toggleFullscreen();
                 });
             }
+            
+            if (keybinds.open_settings) {
+                const success = globalShortcut.register(keybinds.open_settings, () => {
+                    if (!mainWindow.isVisible()) {
+                        mainWindow.show();
+                        mainWindow.focus();
+                    }
+                    mainWindow.webContents.send('open-settings', []);
+                });
+            }
         } catch (error) {
             console.error('Error registering shortcuts:', error);
         }
@@ -312,7 +324,8 @@ app.whenReady().then(() => {
                 keybinds: {
                     toggle_window: parsedConfig.keybinds?.toggle_window || 'Control+K',
                     take_screenshot: parsedConfig.keybinds?.take_screenshot || 'Control+Enter',
-                    toggle_fullscreen: parsedConfig.keybinds?.toggle_fullscreen || 'Control+F12'
+                    toggle_fullscreen: parsedConfig.keybinds?.toggle_fullscreen || 'Control+F12',
+                    open_settings: parsedConfig.keybinds?.open_settings || 'Control+Alt+S'
                 },
                 model: {
                     current: parsedConfig.model?.current || 'deepseek-coder-v2:16b',
@@ -361,7 +374,8 @@ app.whenReady().then(() => {
                 keybinds: {
                     toggle_window: newConfig.keybinds.toggle_window || 'Control+K',
                     take_screenshot: newConfig.keybinds.take_screenshot || 'Control+Enter',
-                    toggle_fullscreen: newConfig.keybinds.toggle_fullscreen || 'Control+F12'
+                    toggle_fullscreen: newConfig.keybinds.toggle_fullscreen || 'Control+F12',
+                    open_settings: newConfig.keybinds.open_settings || 'Control+Alt+S'
                 },
                 model: {
                     current: newConfig.model.current || 'deepseek-coder-v2:16b',

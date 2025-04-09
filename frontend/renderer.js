@@ -18,7 +18,8 @@ const status = document.getElementById('status');
 const keybindButtons = {
     toggle: document.getElementById('toggle-window-bind'),
     screenshot: document.getElementById('screenshot-bind'),
-    fullscreen: document.getElementById('fullscreen-bind')
+    fullscreen: document.getElementById('fullscreen-bind'),
+    settings: document.getElementById('settings-bind')
 };
 
 let config = null;
@@ -39,7 +40,8 @@ const defaultConfig = {
     keybinds: {
         toggle_window: 'Control+K',
         take_screenshot: 'Control+Enter',
-        toggle_fullscreen: 'Control+F12'
+        toggle_fullscreen: 'Control+F12',
+        open_settings: 'Control+Alt+S'
     },
     model: {
         current: 'deepseek-coder-v2:16b',
@@ -100,6 +102,11 @@ function updateKeybindButtons() {
     if (keybindButtons.fullscreen) {
         const fullscreenKeybind = config.keybinds.toggle_fullscreen || defaultConfig.keybinds.toggle_fullscreen;
         keybindButtons.fullscreen.textContent = fullscreenKeybind;
+    }
+    
+    if (keybindButtons.settings) {
+        const settingsKeybind = config.keybinds.open_settings || defaultConfig.keybinds.open_settings;
+        keybindButtons.settings.textContent = settingsKeybind;
     }
 }
 
@@ -623,6 +630,13 @@ document.addEventListener('DOMContentLoaded', () => {
             updateStatus('Started new chat');
         });
     }
+    
+    window.electronAPI.onOpenSettings(() => {
+        if (settingsModal) {
+            settingsModal.classList.add('open');
+            updateStatus('Settings opened');
+        }
+    });
 });
 
 window.electronAPI.onUpdateChat((data) => {

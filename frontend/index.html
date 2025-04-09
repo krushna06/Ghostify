@@ -190,6 +190,8 @@
             border-radius: 8px;
             width: 90%;
             max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
             border: 1px solid var(--border-color);
         }
 
@@ -623,6 +625,10 @@
                     <span class="shortcut-key">Ctrl+Enter</span>
                     <span>Take Screenshot</span>
                 </div>
+                <div class="shortcut-item">
+                    <span class="shortcut-key">Ctrl+Alt+S</span>
+                    <span>Open Settings</span>
+                </div>
             </div>
         </div>
         
@@ -673,6 +679,10 @@
                     <div class="setting-row">
                         <label>Toggle Fullscreen:</label>
                         <button id="fullscreen-bind" class="keybind-button" data-default="Control+F12">Control+F12</button>
+                    </div>
+                    <div class="setting-row">
+                        <label>Open Settings:</label>
+                        <button id="settings-bind" class="keybind-button" data-default="Control+Alt+S">Control+Alt+S</button>
                     </div>
                 </div>
                 
