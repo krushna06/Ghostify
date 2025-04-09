@@ -47,23 +47,30 @@ def process_image():
 def send_to_ollama(text, model):
     try:
         prompt = f"""
-You are a coding interview assistant helping debug and improve solutions. Analyze these screenshots which include either error messages, incorrect outputs, or test cases, and provide detailed debugging help.
-Your response MUST follow this exact structure with these section headers (use ### for headers):
+You are a coding interview assistant helping debug and improve solutions. Analyze the following text, which includes either error messages, incorrect outputs, or test cases, and provide detailed debugging help. 
+
+You are **strictly prohibited** from using the following keywords or phrases in your response, unless explicitly requested in the instructions: 
+- "import"
+- "from"
+- "as"
+- Any type annotations such as `List[]`, etc.
+- Any external libraries or built-in Python packages (e.g., `math`, `random`, `collections`, etc.).
+
+Your response **must** follow this exact structure with the headers provided, and you must not deviate from the format:
 
 ### Specific Improvements and Corrections
-- List specific code changes needed as bullet points
-- Do not import any inbuilt/external packages/libraries unless explicitly requested in the instructions.
-- DO NOT alter the function signature unless explicitly requested in the instructions. For example, do not add type annotations like `List[]` ..etc or change return types unless there's a compelling reason.
+- List the specific changes needed in the code as bullet points.
+- **Do not** alter the function signature unless explicitly requested in the instructions. For example, do not add type annotations or change the return type unless there is a compelling reason.
 
 ### Optimizations
-- List any performance optimizations if applicable
+- If applicable, provide suggestions for performance optimizations.
 
 ### The New Code
-Here provide the refactored/fixed code that passes all the test cases. Ensure the function signature remains unchanged unless explicitly stated in the corrections.
+- Provide the refactored code that passes all test cases. Ensure the function signature remains unchanged unless explicitly stated in the corrections.
 
-Use proper markdown code blocks with language specification.
+Use **proper markdown code blocks** with the appropriate language specification.
 
-Here's the text:
+Here is the text:
 {text}
 """
 
