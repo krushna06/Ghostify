@@ -35,6 +35,32 @@
             overflow: hidden;
         }
 
+        body.fullscreen-mode {
+            background: transparent;
+        }
+        
+        body.fullscreen-mode #app {
+            background: transparent;
+            backdrop-filter: none;
+        }
+        
+        body.fullscreen-mode #toolbar,
+        body.fullscreen-mode #sidebar,
+        body.fullscreen-mode .modal-content {
+            background: transparent;
+            backdrop-filter: none;
+            border: none;
+        }
+        
+        body.fullscreen-mode .chat-item {
+            background: transparent;
+            border: none;
+        }
+        
+        body.fullscreen-mode .code-block {
+            background: rgba(0, 0, 0, 0.3);
+        }
+
         #app {
             display: flex;
             height: 100vh;
@@ -616,6 +642,14 @@
                 </div>
                 
                 <div class="settings-section">
+                    <h3>Text Transparency</h3>
+                    <div class="setting-row">
+                        <input type="range" id="text-transparency" min="50" max="100" step="5">
+                        <span id="text-transparency-value">100%</span>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
                     <h3>AI Model</h3>
                     <div class="setting-row">
                         <label>Select Model:</label>
@@ -639,6 +673,10 @@
                     <div class="setting-row">
                         <label>Show History:</label>
                         <button id="history-bind" class="keybind-button" data-default="Control+H">Control+H</button>
+                    </div>
+                    <div class="setting-row">
+                        <label>Toggle Fullscreen:</label>
+                        <button id="fullscreen-bind" class="keybind-button" data-default="Control+F12">Control+F12</button>
                     </div>
                 </div>
                 

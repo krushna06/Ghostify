@@ -9,13 +9,17 @@ const discardSettingsBtn = document.getElementById('discard-settings');
 const modelSelect = document.getElementById('ai-model');
 const transparencySlider = document.getElementById('transparency');
 const transparencyValue = document.getElementById('transparency-value');
+const textTransparencySlider = document.getElementById('text-transparency');
+const textTransparencyValue = document.getElementById('text-transparency-value');
 const chatList = document.getElementById('chat-list');
 const chatHistory = document.getElementById('chat-history');
 const status = document.getElementById('status');
 
 const keybindButtons = {
     toggle: document.getElementById('toggle-window-bind'),
-    screenshot: document.getElementById('screenshot-bind')
+    screenshot: document.getElementById('screenshot-bind'),
+    history: document.getElementById('history-bind'),
+    fullscreen: document.getElementById('fullscreen-bind')
 };
 
 let config = null;
@@ -30,11 +34,14 @@ let currentChatSession = {
 const defaultConfig = {
     appearance: {
         transparency: 0.95,
+        textTransparency: 1.0,
         theme: 'dark'
     },
     keybinds: {
         toggle_window: 'Control+K',
-        take_screenshot: 'Control+Enter'
+        take_screenshot: 'Control+Enter',
+        show_history: 'Control+H',
+        toggle_fullscreen: 'Control+F12'
     },
     model: {
         current: 'deepseek-coder-v2:16b',
@@ -47,46 +54,34 @@ const defaultConfig = {
 };
 
 async function initializeSettings() {
-    keybindButtons.toggle = document.getElementById('toggle-window-bind');
-    keybindButtons.screenshot = document.getElementById('screenshot-bind');
-    
     try {
         config = await window.electronAPI.getConfig();
+        originalConfig = JSON.parse(JSON.stringify(config));
         
-        if (!config) {
-            config = defaultConfig;
-        }
+        transparencySlider.addEventListener('input', () => {
+            const value = transparencySlider.value / 100;
+            transparencyValue.textContent = `${Math.round(value * 100)}%`;
+            config.appearance.transparency = value;
+        });
         
-        if (!config.keybinds) {
-            config.keybinds = defaultConfig.keybinds;
-        } else {
-            if (!config.keybinds.toggle_window) {
-                config.keybinds.toggle_window = defaultConfig.keybinds.toggle_window;
+        textTransparencySlider.addEventListener('input', () => {
+            const value = textTransparencySlider.value / 100;
+            textTransparencyValue.textContent = `${Math.round(value * 100)}%`;
+            config.appearance.textTransparency = value;
+            applyTextTransparency(value);
+        });
+        
+        Object.entries(keybindButtons).forEach(([key, button]) => {
+            if (button) {
+                button.addEventListener('click', () => startRecordingKeybind(button));
             }
-            if (!config.keybinds.take_screenshot) {
-                config.keybinds.take_screenshot = defaultConfig.keybinds.take_screenshot;
-            }
-        }
+        });
         
-        if (!config.model) {
-            config.model = {
-                current: 'deepseek-coder-v2:16b',
-                available_models: {}
-            };
-        }
+        updateSettingsUI();
     } catch (error) {
-        config = defaultConfig;
+        console.error('Error initializing settings:', error);
+        updateStatus('Error loading settings');
     }
-    
-    originalConfig = JSON.parse(JSON.stringify(config));
-    
-    if (transparencySlider) {
-        transparencySlider.value = (config.appearance?.transparency || 0.95) * 100;
-        transparencyValue.textContent = `${Math.round(transparencySlider.value)}%`;
-    }
-    
-    updateKeybindButtons();
-    populateModelSelect();
 }
 
 function updateKeybindButtons() {
@@ -736,3 +731,34 @@ codeBlockStyles.textContent = `
     }
 `;
 document.head.appendChild(codeBlockStyles);
+
+function applyTextTransparency(transparency) {
+    const textElements = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div, button, label, a');
+    textElements.forEach(element => {
+        element.style.opacity = transparency;
+    });
+}
+
+window.electronAPI.onFullscreenChanged((isFullscreen) => {
+    if (isFullscreen) {
+        document.body.classList.add('fullscreen-mode');
+    } else {
+        document.body.classList.remove('fullscreen-mode');
+    }
+});
+
+function updateSettingsUI() {
+    if (!config) return;
+    
+    transparencySlider.value = config.appearance.transparency * 100;
+    transparencyValue.textContent = `${Math.round(config.appearance.transparency * 100)}%`;
+    
+    textTransparencySlider.value = config.appearance.textTransparency * 100;
+    textTransparencyValue.textContent = `${Math.round(config.appearance.textTransparency * 100)}%`;
+    
+    applyTextTransparency(config.appearance.textTransparency);
+    
+    populateModelSelect();
+    
+    updateKeybindButtons();
+}

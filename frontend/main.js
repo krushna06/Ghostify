@@ -9,6 +9,7 @@ const ini = require('ini');
 let mainWindow;
 let chatHistory = [];
 let config;
+let isFullscreen = false;
 
 const stealthConfig = {
     hideFromTaskManager: true,
@@ -20,12 +21,14 @@ function getDefaultConfig() {
     return {
         appearance: {
             transparency: 0.95,
+            textTransparency: 1.0,
             theme: 'dark'
         },
         keybinds: {
             toggle_window: 'Control+K',
             take_screenshot: 'Control+Enter',
-            show_history: 'Control+H'
+            show_history: 'Control+H',
+            toggle_fullscreen: 'Control+F12'
         },
         model: {
             current: 'deepseek-coder-v2:16b',
@@ -48,12 +51,14 @@ function loadConfig() {
         const config = {
             appearance: {
                 transparency: parseFloat(parsedConfig.appearance?.transparency || 0.95),
+                textTransparency: parseFloat(parsedConfig.appearance?.textTransparency || 1.0),
                 theme: parsedConfig.appearance?.theme || 'dark'
             },
             keybinds: {
                 toggle_window: parsedConfig.keybinds?.toggle_window || 'Control+K',
                 take_screenshot: parsedConfig.keybinds?.take_screenshot || 'Control+Enter',
-                show_history: parsedConfig.keybinds?.show_history || 'Control+H'
+                show_history: parsedConfig.keybinds?.show_history || 'Control+H',
+                toggle_fullscreen: parsedConfig.keybinds?.toggle_fullscreen || 'Control+F12'
             },
             model: {
                 current: parsedConfig.model?.current || 'deepseek-coder-v2:16b',
@@ -159,6 +164,37 @@ function createWindow() {
     }, 100);
 }
 
+function toggleFullscreen() {
+    if (!mainWindow) return;
+    
+    isFullscreen = !isFullscreen;
+    
+    if (isFullscreen) {
+        const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+        
+        mainWindow.setBounds({ x: 0, y: 0, width, height });
+        
+        mainWindow.setIgnoreMouseEvents(true);
+        
+        mainWindow.webContents.send('fullscreen-changed', true);
+    } else {
+        const { width, height } = screen.getPrimaryDisplay().workAreaSize;
+        const windowWidth = Math.min(800, width * 0.8);
+        const windowHeight = Math.min(600, height * 0.8);
+        
+        mainWindow.setBounds({
+            x: width - windowWidth - 20,
+            y: 20,
+            width: windowWidth,
+            height: windowHeight
+        });
+        
+        mainWindow.setIgnoreMouseEvents(false);
+        
+        mainWindow.webContents.send('fullscreen-changed', false);
+    }
+}
+
 app.whenReady().then(() => {
     loadChatHistory();
     createWindow();
@@ -200,7 +236,15 @@ app.whenReady().then(() => {
                     mainWindow.webContents.send('show-chat-history', []);
                 });
             }
-        } catch (error) {}
+            
+            if (keybinds.toggle_fullscreen) {
+                const success = globalShortcut.register(keybinds.toggle_fullscreen, () => {
+                    toggleFullscreen();
+                });
+            }
+        } catch (error) {
+            console.error('Error registering shortcuts:', error);
+        }
     }
 
     registerShortcuts();
@@ -273,12 +317,14 @@ app.whenReady().then(() => {
             const config = {
                 appearance: {
                     transparency: parseFloat(parsedConfig.appearance?.transparency || 0.95),
+                    textTransparency: parseFloat(parsedConfig.appearance?.textTransparency || 1.0),
                     theme: parsedConfig.appearance?.theme || 'dark'
                 },
                 keybinds: {
                     toggle_window: parsedConfig.keybinds?.toggle_window || 'Control+K',
                     take_screenshot: parsedConfig.keybinds?.take_screenshot || 'Control+Enter',
-                    show_history: parsedConfig.keybinds?.show_history || 'Control+H'
+                    show_history: parsedConfig.keybinds?.show_history || 'Control+H',
+                    toggle_fullscreen: parsedConfig.keybinds?.toggle_fullscreen || 'Control+F12'
                 },
                 model: {
                     current: parsedConfig.model?.current || 'deepseek-coder-v2:16b',
@@ -321,12 +367,14 @@ app.whenReady().then(() => {
             const configToSave = {
                 appearance: {
                     transparency: newConfig.appearance.transparency?.toString() || '0.95',
+                    textTransparency: newConfig.appearance.textTransparency?.toString() || '1.0',
                     theme: newConfig.appearance.theme || 'dark'
                 },
                 keybinds: {
                     toggle_window: newConfig.keybinds.toggle_window || 'Control+K',
                     take_screenshot: newConfig.keybinds.take_screenshot || 'Control+Enter',
-                    show_history: newConfig.keybinds.show_history || 'Control+H'
+                    show_history: newConfig.keybinds.show_history || 'Control+H',
+                    toggle_fullscreen: newConfig.keybinds.toggle_fullscreen || 'Control+F12'
                 },
                 model: {
                     current: newConfig.model.current || 'deepseek-coder-v2:16b',
