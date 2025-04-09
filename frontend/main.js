@@ -27,7 +27,6 @@ function getDefaultConfig() {
         keybinds: {
             toggle_window: 'Control+K',
             take_screenshot: 'Control+Enter',
-            show_history: 'Control+H',
             toggle_fullscreen: 'Control+F12'
         },
         model: {
@@ -57,7 +56,6 @@ function loadConfig() {
             keybinds: {
                 toggle_window: parsedConfig.keybinds?.toggle_window || 'Control+K',
                 take_screenshot: parsedConfig.keybinds?.take_screenshot || 'Control+Enter',
-                show_history: parsedConfig.keybinds?.show_history || 'Control+H',
                 toggle_fullscreen: parsedConfig.keybinds?.toggle_fullscreen || 'Control+F12'
             },
             model: {
@@ -228,49 +226,11 @@ app.whenReady().then(() => {
                 });
             }
 
-            if (keybinds.show_history) {
-                const success = globalShortcut.register(keybinds.show_history, () => {
-                    if (!mainWindow.isVisible()) {
-                        mainWindow.show();
-                        mainWindow.focus();
-                    }
-                    mainWindow.webContents.send('show-chat-history', []);
-                });
-            }
-            
             if (keybinds.toggle_fullscreen) {
                 const success = globalShortcut.register(keybinds.toggle_fullscreen, () => {
                     toggleFullscreen();
                 });
             }
-            
-            globalShortcut.register('Alt+A', () => {
-                if (mainWindow && mainWindow.isVisible()) {
-                    const bounds = mainWindow.getBounds();
-                    mainWindow.setPosition(bounds.x - 10, bounds.y);
-                }
-            });
-            
-            globalShortcut.register('Alt+D', () => {
-                if (mainWindow && mainWindow.isVisible()) {
-                    const bounds = mainWindow.getBounds();
-                    mainWindow.setPosition(bounds.x + 10, bounds.y);
-                }
-            });
-            
-            globalShortcut.register('Alt+W', () => {
-                if (mainWindow && mainWindow.isVisible()) {
-                    const bounds = mainWindow.getBounds();
-                    mainWindow.setPosition(bounds.x, bounds.y - 10);
-                }
-            });
-            
-            globalShortcut.register('Alt+S', () => {
-                if (mainWindow && mainWindow.isVisible()) {
-                    const bounds = mainWindow.getBounds();
-                    mainWindow.setPosition(bounds.x, bounds.y + 10);
-                }
-            });
         } catch (error) {
             console.error('Error registering shortcuts:', error);
         }
@@ -352,7 +312,6 @@ app.whenReady().then(() => {
                 keybinds: {
                     toggle_window: parsedConfig.keybinds?.toggle_window || 'Control+K',
                     take_screenshot: parsedConfig.keybinds?.take_screenshot || 'Control+Enter',
-                    show_history: parsedConfig.keybinds?.show_history || 'Control+H',
                     toggle_fullscreen: parsedConfig.keybinds?.toggle_fullscreen || 'Control+F12'
                 },
                 model: {
@@ -402,7 +361,6 @@ app.whenReady().then(() => {
                 keybinds: {
                     toggle_window: newConfig.keybinds.toggle_window || 'Control+K',
                     take_screenshot: newConfig.keybinds.take_screenshot || 'Control+Enter',
-                    show_history: newConfig.keybinds.show_history || 'Control+H',
                     toggle_fullscreen: newConfig.keybinds.toggle_fullscreen || 'Control+F12'
                 },
                 model: {

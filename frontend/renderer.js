@@ -18,7 +18,6 @@ const status = document.getElementById('status');
 const keybindButtons = {
     toggle: document.getElementById('toggle-window-bind'),
     screenshot: document.getElementById('screenshot-bind'),
-    history: document.getElementById('history-bind'),
     fullscreen: document.getElementById('fullscreen-bind')
 };
 
@@ -40,7 +39,6 @@ const defaultConfig = {
     keybinds: {
         toggle_window: 'Control+K',
         take_screenshot: 'Control+Enter',
-        show_history: 'Control+H',
         toggle_fullscreen: 'Control+F12'
     },
     model: {
@@ -97,6 +95,11 @@ function updateKeybindButtons() {
     if (keybindButtons.screenshot) {
         const screenshotKeybind = config.keybinds.take_screenshot || defaultConfig.keybinds.take_screenshot;
         keybindButtons.screenshot.textContent = screenshotKeybind;
+    }
+    
+    if (keybindButtons.fullscreen) {
+        const fullscreenKeybind = config.keybinds.toggle_fullscreen || defaultConfig.keybinds.toggle_fullscreen;
+        keybindButtons.fullscreen.textContent = fullscreenKeybind;
     }
 }
 
