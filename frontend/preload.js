@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getChatHistory: () => ipcRenderer.invoke('get-chat-history'),
     loadChatSession: (sessionId) => ipcRenderer.invoke('load-chat-session', sessionId),
     toggleSettings: () => ipcRenderer.invoke('toggle-window'),
+    toggleStealthMode: (settings) => ipcRenderer.invoke('toggle-stealth-mode', settings),
     onUpdateChat: (callback) => ipcRenderer.on('update-chat', (_, data) => callback(data)),
     onShowChatHistory: (callback) => ipcRenderer.on('show-chat-history', (_, data) => callback(data)),
     onScreenshotTaken: (callback) => ipcRenderer.on('screenshot-taken', () => callback()),

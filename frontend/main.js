@@ -10,6 +10,12 @@ let mainWindow;
 let chatHistory = [];
 let config;
 
+const stealthConfig = {
+    hideFromTaskManager: true,
+    hideFromScreenCapture: true,
+    hideFromAltTab: true
+};
+
 function getDefaultConfig() {
     return {
         appearance: {
@@ -127,14 +133,30 @@ function createWindow() {
         },
         titleBarStyle: 'hidden',
         backgroundColor: '#00000000',
-        opacity: parseFloat(config.appearance.transparency)
+        opacity: parseFloat(config.appearance.transparency),
+        skipTaskbar: stealthConfig.hideFromTaskManager,
+        show: false,
+        type: 'toolbar'
     });
+
+    if (stealthConfig.hideFromScreenCapture) {
+        mainWindow.setContentProtection(true);
+    }
 
     mainWindow.loadFile('index.html');
     mainWindow.center();
     
     const windowBounds = mainWindow.getBounds();
     mainWindow.setPosition(width - windowBounds.width - 20, 20);
+
+    if (stealthConfig.hideFromAltTab) {
+        mainWindow.setSkipTaskbar(true);
+        mainWindow.setAlwaysOnTop(true, 'screen-saver');
+    }
+
+    setTimeout(() => {
+        mainWindow.show();
+    }, 100);
 }
 
 app.whenReady().then(() => {
@@ -378,6 +400,27 @@ app.whenReady().then(() => {
                 messages: [] 
             };
         }
+    });
+
+    ipcMain.handle('toggle-stealth-mode', (_, settings) => {
+        stealthConfig.hideFromTaskManager = settings.hideFromTaskManager ?? stealthConfig.hideFromTaskManager;
+        stealthConfig.hideFromScreenCapture = settings.hideFromScreenCapture ?? stealthConfig.hideFromScreenCapture;
+        stealthConfig.hideFromAltTab = settings.hideFromAltTab ?? stealthConfig.hideFromAltTab;
+
+        if (mainWindow) {
+            mainWindow.setSkipTaskbar(stealthConfig.hideFromTaskManager);
+            mainWindow.setContentProtection(stealthConfig.hideFromScreenCapture);
+            
+            if (stealthConfig.hideFromAltTab) {
+                mainWindow.setSkipTaskbar(true);
+                mainWindow.setAlwaysOnTop(true, 'screen-saver');
+            } else {
+                mainWindow.setSkipTaskbar(false);
+                mainWindow.setAlwaysOnTop(true);
+            }
+        }
+        
+        return true;
     });
 
     app.on('window-all-closed', () => {
