@@ -31,14 +31,15 @@ def process_image():
 
         print(f"📸 OCR Extracted Text: {extracted_text}")
 
-        ollama_response = send_to_ollama(extracted_text)
+        model = request.headers.get('X-Model', 'deepseek-coder-v2:16b')
+        ollama_response = send_to_ollama(extracted_text, model)
 
         return jsonify({"text": extracted_text, "ollama_response": ollama_response})
 
     except Exception as e:
         return jsonify({"error": f"OCR processing failed: {str(e)}"}), 500
 
-def send_to_ollama(text):
+def send_to_ollama(text, model="deepseek-coder-v2:16b"):
     try:
         prompt = f"""
 You are a coding interview assistant helping debug and improve solutions. Analyze these screenshots which include either error messages, incorrect outputs, or test cases, and provide detailed debugging help.
@@ -46,7 +47,7 @@ Your response MUST follow this exact structure with these section headers (use #
 
 ### Specific Improvements and Corrections
 - List specific code changes needed as bullet points
-- DO NOT alter the function signature unless explicitly requested in the instructions. For example, do not add type annotations like `List[int]` ..etc or change return types unless there’s a compelling reason.
+- DO NOT alter the function signature unless explicitly requested in the instructions. For example, do not add type annotations like `List[int]` ..etc or change return types unless there's a compelling reason.
 
 ### Optimizations
 - List any performance optimizations if applicable
@@ -61,7 +62,7 @@ Here's the text:
 """
 
         payload = {
-            "model": "deepseek-coder-v2:16b",
+            "model": model,
             "prompt": prompt,
             "stream": False
         }

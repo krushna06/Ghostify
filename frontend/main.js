@@ -131,6 +131,7 @@ function createWindow() {
         transparent: true,
         frame: false,
         alwaysOnTop: true,
+        resizable: false,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -242,6 +243,34 @@ app.whenReady().then(() => {
                     toggleFullscreen();
                 });
             }
+            
+            globalShortcut.register('Alt+A', () => {
+                if (mainWindow && mainWindow.isVisible()) {
+                    const bounds = mainWindow.getBounds();
+                    mainWindow.setPosition(bounds.x - 10, bounds.y);
+                }
+            });
+            
+            globalShortcut.register('Alt+D', () => {
+                if (mainWindow && mainWindow.isVisible()) {
+                    const bounds = mainWindow.getBounds();
+                    mainWindow.setPosition(bounds.x + 10, bounds.y);
+                }
+            });
+            
+            globalShortcut.register('Alt+W', () => {
+                if (mainWindow && mainWindow.isVisible()) {
+                    const bounds = mainWindow.getBounds();
+                    mainWindow.setPosition(bounds.x, bounds.y - 10);
+                }
+            });
+            
+            globalShortcut.register('Alt+S', () => {
+                if (mainWindow && mainWindow.isVisible()) {
+                    const bounds = mainWindow.getBounds();
+                    mainWindow.setPosition(bounds.x, bounds.y + 10);
+                }
+            });
         } catch (error) {
             console.error('Error registering shortcuts:', error);
         }
