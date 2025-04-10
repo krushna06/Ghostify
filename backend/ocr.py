@@ -12,7 +12,7 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 config = configparser.ConfigParser()
 config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'config.ini')
 config.read(config_path)
-model = config.get('model', 'current', fallback='deepseek-coder-v2:16b')
+model = config.get('model', 'current', fallback='gemma3:4b')
 
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
