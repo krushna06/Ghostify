@@ -39,6 +39,9 @@ function getDefaultConfig() {
                 "Others": ["qwen:15b", "falcon3:7b"],
                 "gemini": ["gemma3:4b"]
             }
+        },
+        ollama: {
+            base_url: 'http://localhost:11434'
         }
     };
 }
@@ -290,15 +293,26 @@ app.whenReady().then(() => {
             });
     }
 
+    function getPythonPath() {
+        if (process.env.NODE_ENV === 'development') {
+            return path.join(__dirname, '..', 'backend', 'ocr.py');
+        } else {
+            return path.join(process.resourcesPath, 'backend', 'ocr.py');
+        }
+    }
+
     function sendToOCR(imagePath) {
         mainWindow.webContents.send('ocr-processing');
         const formData = new FormData();
         formData.append('image', createReadStream(imagePath));
 
+        const ollamaUrl = config.ollama?.base_url || 'http://localhost:11434';
+        
         axios.post('http://127.0.0.1:5001/process-image', formData, {
             headers: {
                 ...formData.getHeaders(),
-                'X-Model': config.model.current
+                'X-Model': config.model.current,
+                'X-Ollama-Url': ollamaUrl
             },
             timeout: 90000000
         })
@@ -312,18 +326,13 @@ app.whenReady().then(() => {
                     sessionId: sessionId
                 };
                 
-                // Ensure chatHistory is an array
                 if (!Array.isArray(chatHistory)) {
                     chatHistory = [];
                 }
                 
-                // Add new chat item
                 chatHistory.push(chatItem);
-                
-                // Save chat history
                 saveChatHistory();
                 
-                // Send updates to renderer
                 mainWindow.webContents.send('update-chat', chatItem);
                 mainWindow.webContents.send('show-chat-history', chatHistory);
             })
@@ -336,18 +345,13 @@ app.whenReady().then(() => {
                     sessionId: sessionId
                 };
                 
-                // Ensure chatHistory is an array
                 if (!Array.isArray(chatHistory)) {
                     chatHistory = [];
                 }
                 
-                // Add error chat item
                 chatHistory.push(errorItem);
-                
-                // Save chat history
                 saveChatHistory();
                 
-                // Send updates to renderer
                 mainWindow.webContents.send('update-chat', errorItem);
                 mainWindow.webContents.send('show-chat-history', chatHistory);
             });
