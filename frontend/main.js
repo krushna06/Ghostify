@@ -36,7 +36,8 @@ function getDefaultConfig() {
                 "Deepseek": ["deepseek-coder-v2:16b", "deepseek-coder-v2:236b"],
                 "Qwen": ["qwen2.5-coder:1.5b", "qwen2.5-coder:3b", "qwen2.5-coder:14b"],
                 "Codellama": ["codellama:7b", "codellama:13b"],
-                "Others": ["qwen:15b", "falcon3:7b"]
+                "Others": ["qwen:15b", "falcon3:7b"],
+                "gemini": ["gemma3:4b"]
             }
         }
     };
@@ -96,15 +97,27 @@ function saveConfig() {
 }
 
 function getChatHistoryPath() {
-    return path.join(app.getPath('userData'), 'chat_history.json');
+    const appDataPath = app.getPath('appData');
+    const ghostifyPath = path.join(appDataPath, 'Ghostify');
+    if (!existsSync(ghostifyPath)) {
+        require('fs').mkdirSync(ghostifyPath, { recursive: true });
+    }
+    const historyPath = path.join(ghostifyPath, 'chat_history.json');
+    console.log('Chat history path:', historyPath);
+    return historyPath;
 }
 
 function loadChatHistory() {
     try {
         const historyPath = getChatHistoryPath();
+        console.log('Loading chat history from:', historyPath);
         if (existsSync(historyPath)) {
             const data = readFileSync(historyPath, 'utf-8');
             chatHistory = JSON.parse(data);
+            console.log('Loaded chat history:', chatHistory);
+        } else {
+            console.log('No existing chat history file found');
+            chatHistory = [];
         }
     } catch (error) {
         console.error('Error loading chat history:', error);
@@ -115,7 +128,10 @@ function loadChatHistory() {
 function saveChatHistory() {
     try {
         const historyPath = getChatHistoryPath();
+        console.log('Saving chat history to:', historyPath);
+        console.log('Chat history content:', JSON.stringify(chatHistory, null, 2));
         writeFileSync(historyPath, JSON.stringify(chatHistory, null, 2));
+        console.log('Chat history saved successfully');
     } catch (error) {
         console.error('Error saving chat history:', error);
     }
@@ -288,24 +304,52 @@ app.whenReady().then(() => {
         })
             .then(response => {
                 const { text, ollama_response } = response.data;
+                const sessionId = Date.now().toString();
                 const chatItem = { 
                     user: text, 
                     ollama: ollama_response,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    sessionId: sessionId
                 };
+                
+                // Ensure chatHistory is an array
+                if (!Array.isArray(chatHistory)) {
+                    chatHistory = [];
+                }
+                
+                // Add new chat item
                 chatHistory.push(chatItem);
+                
+                // Save chat history
                 saveChatHistory();
+                
+                // Send updates to renderer
                 mainWindow.webContents.send('update-chat', chatItem);
+                mainWindow.webContents.send('show-chat-history', chatHistory);
             })
             .catch(error => {
+                const sessionId = Date.now().toString();
                 const errorItem = { 
                     user: 'Error processing image', 
                     ollama: 'Failed to process the screenshot. Please try again.',
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    sessionId: sessionId
                 };
+                
+                // Ensure chatHistory is an array
+                if (!Array.isArray(chatHistory)) {
+                    chatHistory = [];
+                }
+                
+                // Add error chat item
                 chatHistory.push(errorItem);
+                
+                // Save chat history
                 saveChatHistory();
+                
+                // Send updates to renderer
                 mainWindow.webContents.send('update-chat', errorItem);
+                mainWindow.webContents.send('show-chat-history', chatHistory);
             });
     }
 
@@ -430,15 +474,11 @@ app.whenReady().then(() => {
                 };
             }
             
-            const sessionDate = new Date(sessionId);
-            const sessionMessages = chatHistory.filter(msg => {
-                const msgDate = new Date(msg.timestamp || Date.now());
-                return msgDate.toDateString() === sessionDate.toDateString();
-            });
+            const sessionMessages = chatHistory.filter(msg => msg.sessionId === sessionId);
             
             return {
                 id: sessionId,
-                timestamp: sessionDate.toISOString(),
+                timestamp: new Date(sessionId).toISOString(),
                 messages: sessionMessages
             };
         } catch (error) {
