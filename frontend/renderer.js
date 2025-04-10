@@ -48,7 +48,8 @@ const defaultConfig = {
         available_models: {
             "Deepseek": ["deepseek-coder-v2:16b", "deepseek-coder-v2:236b"],
             "Qwen": ["qwen2.5-coder:1.5b", "qwen2.5-coder:3b", "qwen2.5-coder:14b"],
-            "Codellama": ["codellama:7b", "codellama:13b"]
+            "Codellama": ["codellama:7b", "codellama:13b"],
+            "Gemini": ["gemini3:4b"]
         }
     }
 };
@@ -489,7 +490,7 @@ function addChatSessionToSidebar(session) {
     
     sessionItem.addEventListener('click', async () => {
         try {
-            const sessionData = await window.electronAPI.loadChatSession(session.timestamp);
+            const sessionData = await window.electronAPI.loadChatSession(session.id);
             
             if (chatList) {
                 chatList.innerHTML = '';
@@ -559,16 +560,14 @@ window.electronAPI.onShowChatHistory(async (history) => {
     
     if (Array.isArray(history) && history.length > 0) {
         const sessions = history.reduce((acc, msg) => {
-            const date = new Date(msg.timestamp || Date.now());
-            const dateKey = date.toDateString();
-            
-            if (!acc[dateKey]) {
-                acc[dateKey] = {
-                    timestamp: date,
+            if (!acc[msg.sessionId]) {
+                acc[msg.sessionId] = {
+                    id: msg.sessionId,
+                    timestamp: new Date(msg.timestamp),
                     messages: []
                 };
             }
-            acc[dateKey].messages.push(msg);
+            acc[msg.sessionId].messages.push(msg);
             return acc;
         }, {});
         
@@ -644,9 +643,21 @@ window.electronAPI.onUpdateChat((data) => {
         data.timestamp = new Date().toISOString();
     }
     
-    currentChatSession.messages.push(data);
-    
-    addChatItem(data, chatList);
+    if (chatList) {
+        chatList.innerHTML = '';
+        addChatItem(data, chatList);
+    }
+});
+
+// Add handler for clear-chat event
+window.electronAPI.onClearChat(() => {
+    if (chatList) {
+        chatList.innerHTML = '';
+    }
+    currentChatSession = {
+        id: Date.now().toString(),
+        messages: []
+    };
 });
 
 const style = document.createElement('style');
