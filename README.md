@@ -1,6 +1,6 @@
 # Ghostify
 
-A discreet desktop application that enables you to retrieve answers without being detected by other software, all while staying visible above other applications.
+A discreet tool that enables you to read text on the screen without being detected by other software, all while staying visible above other applications.
 
 ## Features
 
